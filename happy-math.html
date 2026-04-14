@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Math!</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #game {
+    background: white;
+    border-radius: 30px;
+    padding: 30px;
+    width: 420px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(255,255,100,0.3), 0 0 0 6px #FFD700;
+    position: relative;
+  }
+
+  h1 { font-size: 2.2em; color: #FF4500; text-shadow: 3px 3px 0 #FFD700; margin-bottom: 5px; }
+
+  #status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0f0f0;
+    border-radius: 15px;
+    padding: 8px 15px;
+    margin: 10px 0;
+    font-size: 1em;
+    font-weight: bold;
+  }
+
+  #level-badge {
+    background: linear-gradient(135deg, #FF6B6B, #FF4500);
+    color: white;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.95em;
+  }
+
+  #score { color: #8B008B; font-size: 1.1em; }
+  #lives { font-size: 1.2em; }
+
+  #progress-bar {
+    background: #ddd;
+    border-radius: 10px;
+    height: 14px;
+    margin: 8px 0 15px;
+    overflow: hidden;
+  }
+
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00C853, #69F0AE);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  #question-box {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 20px;
+    padding: 25px 20px;
+    margin: 10px 0;
+    color: white;
+  }
+
+  #question-label { font-size: 0.9em; opacity: 0.8; margin-bottom: 5px; }
+  #question { font-size: 2.8em; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+
+  #timer-ring {
+    width: 60px;
+    height: 60px;
+    margin: 10px auto 0;
+    position: relative;
+  }
+
+  #timer-ring svg { transform: rotate(-90deg); }
+  #timer-circle {
+    fill: none;
+    stroke: #FFD700;
+    stroke-width: 5;
+    stroke-dasharray: 157;
+    stroke-dashoffset: 0;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+
+  #timer-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.1em;
+    font-weight: bold;
+    color: white;
+  }
+
+  #options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 15px 0;
+  }
+
+  .opt-btn {
+    padding: 18px;
+    font-size: 1.5em;
+    font-family: inherit;
+    font-weight: bold;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+    color: white;
+  }
+
+  .opt-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 0 rgba(0,0,0,0.2); }
+  .opt-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+
+  .opt-btn:nth-child(1) { background: linear-gradient(135deg, #FF6B6B, #ee0979); }
+  .opt-btn:nth-child(2) { background: linear-gradient(135deg, #4ECDC4, #0099F7); }
+  .opt-btn:nth-child(3) { background: linear-gradient(135deg, #FFD93D, #FF6B35); }
+  .opt-btn:nth-child(4) { background: linear-gradient(135deg, #6BCB77, #00B09B); }
+
+  .opt-btn.correct { background: linear-gradient(135deg, #00C853, #69F0AE) !important; transform: scale(1.05); }
+  .opt-btn.wrong   { background: linear-gradient(135deg, #FF1744, #D50000) !important; transform: scale(0.95); }
+
+  #type-in-wrap { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 10px 0; }
+  #type-in-input {
+    font-family: inherit; font-size: 2em; font-weight: bold;
+    width: 120px; padding: 12px; text-align: center;
+    border: 4px solid #764ba2; border-radius: 15px; outline: none; color: #333;
+  }
+  #type-in-input:focus { border-color: #FF4500; }
+  #type-in-input.correct { border-color: #00C853; background: #e8ffe8; }
+  #type-in-input.wrong   { border-color: #FF1744; background: #ffe8e8; }
+  #type-in-submit {
+    padding: 14px 22px; font-size: 1.5em; font-family: inherit; font-weight: bold;
+    border: none; border-radius: 15px; cursor: pointer;
+    background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+    box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+  }
+  #type-in-submit:hover { transform: translateY(-2px); }
+  #type-in-hint { font-size: 0.85em; color: #888; margin-top: 4px; }
+
+  #feedback {
+    font-size: 1.6em;
+    font-weight: bold;
+    min-height: 40px;
+    transition: all 0.3s;
+  }
+
+  #streak { font-size: 0.9em; color: #FF6B35; min-height: 20px; }
+
+  /* Screens */
+  #start-screen, #level-screen, #end-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  #start-screen.active, #level-screen.active, #end-screen.active { display: flex; }
+  #game-screen { display: none; }
+  #game-screen.active { display: block; }
+
+  .big-btn {
+    padding: 15px 40px;
+    font-size: 1.4em;
+    font-family: inherit;
+    font-weight: bold;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #FF6B6B, #FF4500);
+    color: white;
+    box-shadow: 0 6px 0 #c0392b;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .big-btn:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #c0392b; }
+  .big-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #c0392b; }
+  .big-btn.green { background: linear-gradient(135deg, #00C853, #00897B); box-shadow: 0 6px 0 #00695C; }
+  .big-btn.green:active { box-shadow: 0 2px 0 #00695C; }
+
+  #name-input {
+    font-family: inherit;
+    font-size: 1.2em;
+    padding: 10px 18px;
+    border: 3px solid #FFD700;
+    border-radius: 15px;
+    text-align: center;
+    outline: none;
+    width: 220px;
+    color: #333;
+  }
+  #name-input:focus { border-color: #FF4500; }
+
+  /* Splash screen */
+  #splash-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  #splash-screen.active { display: flex; }
+
+  #splash-title {
+    font-size: 3em;
+    font-weight: bold;
+    background: linear-gradient(135deg, #FF4500, #FFD700, #FF4500);
+    background-size: 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 2s linear infinite, popIn 0.6s ease-out;
+    text-shadow: none;
+    line-height: 1.1;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+  @keyframes popIn   { from{transform:scale(0.3);opacity:0} to{transform:scale(1);opacity:1} }
+
+  #splash-icons { font-size: 2.5em; animation: bounce 1s infinite alternate; }
+
+  #splash-tagline { color: #555; font-size: 1em; }
+
+  #splash-btn {
+    margin-top: 8px;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50%      { transform: scale(1.08); }
+  }
+
+  .start-emoji { font-size: 5em; animation: bounce 1s infinite alternate; }
+  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-15px); } }
+
+  .level-info { font-size: 1em; color: #555; max-width: 300px; }
+
+  #end-stars { font-size: 3em; }
+  #end-msg { font-size: 1.3em; font-weight: bold; color: #333; }
+  #end-score { font-size: 1.1em; color: #8B008B; }
+
+  /* Floating particles */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    font-size: 1.5em;
+    animation: floatUp 1.2s ease-out forwards;
+    z-index: 999;
+  }
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-120px) scale(1.5); }
+  }
+
+  #confetti-container {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; z-index: 998;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    animation: confettiFall 2s ease-in forwards;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="confetti-container"></div>
+
+<div id="game">
+
+  <!-- SPLASH SCREEN -->
+  <div id="splash-screen" class="active">
+    <div id="splash-icons">🎉➕➖✖️➗🎉</div>
+    <div id="splash-title">Happy Math!</div>
+    <p id="splash-tagline">The fun way to learn maths! 🧠⚡</p>
+    <button id="splash-btn" class="big-btn green" onclick="showStart()">▶ Start!</button>
+  </div>
+
+  <!-- START SCREEN -->
+  <div id="start-screen">
+    <div class="start-emoji">🧮</div>
+    <h1>Happy Math!</h1>
+    <p style="color:#555; font-size:1.1em">Answer questions, earn points,<br>become a Math Champion! 🏆</p>
+    <input id="name-input" type="text" maxlength="16" placeholder="Your name..." autocomplete="off"/>
+    <button class="big-btn green" onclick="startGame()">▶ Play!</button>
+  </div>
+
+  <!-- LEVEL INTRO SCREEN -->
+  <div id="level-screen">
+    <div id="level-emoji" style="font-size:4em"></div>
+    <h1 id="level-title"></h1>
+    <p class="level-info" id="level-desc"></p>
+    <button class="big-btn green" onclick="startLevel()">Let's Go! 🚀</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-screen">
+    <div id="status-bar">
+      <span id="level-badge">Level 1</span>
+      <span id="score">⭐ 0</span>
+      <span id="lives">❤️❤️❤️</span>
+    </div>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+
+    <div id="question-box">
+      <div id="question-label">What is...</div>
+      <div id="question">2 + 2 = ?</div>
+      <div id="timer-ring">
+        <svg width="60" height="60" viewBox="0 0 60 60">
+          <circle cx="30" cy="30" r="25" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="5"/>
+          <circle id="timer-circle" cx="30" cy="30" r="25"/>
+        </svg>
+        <div id="timer-text">10</div>
+      </div>
+    </div>
+
+    <div id="options"></div>
+
+    <div id="feedback">🎯 Pick an answer!</div>
+    <div id="streak"></div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div id="end-screen">
+    <div id="end-stars"></div>
+    <h1>Game Over!</h1>
+    <div id="end-msg"></div>
+    <div id="end-score"></div>
+    <button class="big-btn green" onclick="startGame()">🔄 Play Again</button>
+  </div>
+
+</div>
+
+<script>
+// ─── Audio ───────────────────────────────────────────────────────────────────
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, dur, vol = 0.3) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.connect(g); g.connect(AC.destination);
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
+  o.start(); o.stop(AC.currentTime + dur);
+}
+
+function soundCorrect() {
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.2, 0.3), i * 80));
+}
+
+function soundWrong() {
+  playTone(200, 'sawtooth', 0.4, 0.3);
+  setTimeout(() => playTone(150, 'sawtooth', 0.3, 0.3), 150);
+}
+
+function soundLevelUp() {
+  [523, 659, 784, 880, 1047].forEach((f, i) => setTimeout(() => playTone(f, 'triangle', 0.3, 0.4), i * 100));
+}
+
+function soundTick() { playTone(800, 'square', 0.05, 0.05); }
+function soundTimeout() { playTone(300, 'sawtooth', 0.5, 0.2); }
+
+function splashRiff() {
+  // Upbeat 8-bit style melody: C E G E F A G C' (happy major feel)
+  const notes = [
+    [523, 0],   // C5
+    [659, 150], // E5
+    [784, 300], // G5
+    [659, 450], // E5
+    [698, 600], // F5
+    [880, 750], // A5
+    [784, 900], // G5
+    [523, 1050],// C5
+    [659, 1200],// E5
+    [784, 1350],// G5
+    [1047,1500],// C6  — big finish
+  ];
+  notes.forEach(([freq, delay]) =>
+    setTimeout(() => playTone(freq, 'square', 0.25, 0.35), delay)
+  );
+}
+
+function showStart() {
+  AC.resume().then(() => {
+    splashRiff();
+    show('start-screen');
+    setTimeout(() => document.getElementById('name-input').focus(), 100);
+  });
+}
+
+// ─── Levels config ───────────────────────────────────────────────────────────
+const LEVELS = [
+  {
+    name: "Level 1", emoji: "🌱", title: "Easy Peasy!",
+    desc: "Add and subtract small numbers (1–10). You've got this!",
+    ops: ['+', '-'], max: 10, time: 15, questions: 5, pointsPerQ: 10
+  },
+  {
+    name: "Level 2", emoji: "⭐", title: "Getting Warmer!",
+    desc: "Add and subtract bigger numbers (up to 20). Stay sharp!",
+    ops: ['+', '-'], max: 20, time: 12, questions: 6, pointsPerQ: 15
+  },
+  {
+    name: "Level 3", emoji: "🔥", title: "Times Tables!",
+    desc: "Multiplication time! 2× to 5× tables. You can do it!",
+    ops: ['×'], max: 5, time: 12, questions: 7, pointsPerQ: 20
+  },
+  {
+    name: "Level 4", emoji: "💥", title: "Mix It Up!",
+    desc: "Addition, subtraction AND multiplication. Brain power!",
+    ops: ['+', '-', '×'], max: 10, time: 10, questions: 8, pointsPerQ: 25
+  },
+  {
+    name: "Level 5", emoji: "🏆", title: "Math Champion!",
+    desc: "Big numbers, all operations including division. Final boss!",
+    ops: ['+', '-', '×', '÷'], max: 12, time: 10, questions: 10, pointsPerQ: 30
+  }
+];
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let state = {};
+
+function startGame() {
+  const input = document.getElementById('name-input').value.trim();
+  state = { level: 0, score: 0, lives: 3, streak: 0, name: input || 'Player' };
+  showLevelIntro();
+}
+
+function showLevelIntro() {
+  const lvl = LEVELS[state.level];
+  show('level-screen');
+  document.getElementById('level-emoji').textContent = lvl.emoji;
+  document.getElementById('level-title').textContent = `${state.name}, ${lvl.title}`;
+  document.getElementById('level-desc').textContent = lvl.desc;
+}
+
+function startLevel() {
+  const lvl = LEVELS[state.level];
+  state.qIndex = 0;
+  state.levelScore = 0;
+  show('game-screen');
+  document.getElementById('level-badge').textContent = lvl.name;
+  updateHUD();
+  nextQuestion();
+}
+
+// ─── Question generation ──────────────────────────────────────────────────────
+function genQuestion(lvl) {
+  const op = lvl.ops[Math.floor(Math.random() * lvl.ops.length)];
+  let a, b, ans;
+
+  if (op === '+') {
+    a = rand(1, lvl.max); b = rand(1, lvl.max);
+    ans = a + b;
+  } else if (op === '-') {
+    a = rand(1, lvl.max); b = rand(1, a);
+    ans = a - b;
+  } else if (op === '×') {
+    a = rand(2, lvl.max); b = rand(2, 10);
+    ans = a * b;
+  } else { // ÷
+    b = rand(2, lvl.max); ans = rand(2, 10);
+    a = b * ans;
+  }
+
+  return { text: `${a} ${op} ${b} = ?`, ans };
+}
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function makeOptions(ans) {
+  const opts = new Set([ans]);
+  while (opts.size < 4) {
+    const delta = rand(1, Math.max(5, Math.floor(ans * 0.5)));
+    opts.add(ans + (Math.random() < 0.5 ? delta : -delta));
+  }
+  return [...opts].sort(() => Math.random() - 0.5);
+}
+
+// ─── Game flow ────────────────────────────────────────────────────────────────
+let timerInterval;
+
+function nextQuestion() {
+  clearInterval(timerInterval);
+  const lvl = LEVELS[state.level];
+  state.current = genQuestion(lvl);
+  state.typeIn = Math.random() < 0.3; // ~30% chance of type-in mode
+
+  document.getElementById('question').textContent = state.current.text;
+  document.getElementById('feedback').textContent = state.typeIn ? '⌨️ Type your answer!' : '🎯 Pick an answer!';
+  document.getElementById('streak').textContent = state.streak >= 3 ? `🔥 ${state.streak} streak!` : '';
+
+  const container = document.getElementById('options');
+  if (state.typeIn) {
+    container.innerHTML = `
+      <div id="type-in-hint">Type the answer and press ✅</div>
+      <div id="type-in-wrap">
+        <input id="type-in-input" type="number" min="0" autofocus placeholder="?"/>
+        <button id="type-in-submit" onclick="submitTyped()">✅</button>
+      </div>`;
+    document.getElementById('type-in-input').addEventListener('keydown', e => e.key === 'Enter' && submitTyped());
+  } else {
+    const opts = makeOptions(state.current.ans);
+    container.innerHTML = opts.map(o =>
+      `<button class="opt-btn" onclick="answer(this)">${o}</button>`
+    ).join('');
+  }
+
+  updateProgress();
+  startTimer(lvl.time);
+}
+
+function startTimer(seconds) {
+  let remaining = seconds;
+  const circle = document.getElementById('timer-circle');
+  const text = document.getElementById('timer-text');
+  const circumference = 157;
+
+  function tick() {
+    text.textContent = remaining;
+    circle.style.strokeDashoffset = circumference * (1 - remaining / seconds);
+    circle.style.stroke = remaining <= 3 ? '#FF4500' : '#FFD700';
+    if (remaining <= 3 && remaining > 0) soundTick();
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      soundTimeout();
+      // disable inputs
+      document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+      const ti = document.getElementById('type-in-input');
+      if (ti) { ti.disabled = true; document.getElementById('type-in-submit').disabled = true; }
+      handleWrong(null);
+      updateHUD();
+      state.qIndex++;
+      setTimeout(() => {
+        if (state.lives <= 0) return endGame(false);
+        if (state.qIndex >= LEVELS[state.level].questions) {
+          if (state.level + 1 >= LEVELS.length) return endGame(true);
+          state.level++;
+          soundLevelUp();
+          spawnConfetti();
+          showLevelIntro();
+        } else {
+          nextQuestion();
+        }
+      }, 1200);
+    }
+    remaining--;
+  }
+
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+function submitTyped() {
+  const input = document.getElementById('type-in-input');
+  if (!input || input.value === '') return;
+  clearInterval(timerInterval);
+  document.getElementById('type-in-submit').disabled = true;
+  input.disabled = true;
+
+  const chosen = parseInt(input.value);
+  const correct = state.current.ans;
+
+  if (chosen === correct) {
+    input.classList.add('correct');
+    soundCorrect();
+    spawnParticles(input, ['⭐', '✨', '🎉', '💫']);
+    state.streak++;
+    const bonus = state.streak >= 3 ? 5 : 0;
+    const pts = LEVELS[state.level].pointsPerQ + bonus;
+    state.score += pts;
+    state.levelScore++;
+    document.getElementById('feedback').textContent = state.streak >= 3
+      ? `🔥 Streak bonus! +${pts}` : `✅ Correct! +${pts}`;
+    document.getElementById('streak').textContent = state.streak >= 3 ? `🔥 ${state.streak} streak!` : '';
+  } else {
+    input.classList.add('wrong');
+    soundWrong();
+    state.streak = 0;
+    state.lives--;
+    document.getElementById('feedback').textContent = `❌ The answer was ${correct}`;
+    document.getElementById('streak').textContent = '';
+  }
+
+  updateHUD();
+  state.qIndex++;
+  setTimeout(() => {
+    if (state.lives <= 0) return endGame(false);
+    if (state.qIndex >= LEVELS[state.level].questions) {
+      if (state.level + 1 >= LEVELS.length) return endGame(true);
+      state.level++;
+      soundLevelUp();
+      spawnConfetti();
+      showLevelIntro();
+    } else {
+      nextQuestion();
+    }
+  }, 1200);
+}
+
+function answer(btn) {
+  clearInterval(timerInterval);
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+
+  const chosen = parseInt(btn.textContent);
+  const correct = state.current.ans;
+
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    soundCorrect();
+    spawnParticles(btn, ['⭐', '✨', '🎉', '💫']);
+    state.streak++;
+    const bonus = state.streak >= 3 ? 5 : 0;
+    const pts = LEVELS[state.level].pointsPerQ + bonus;
+    state.score += pts;
+    state.levelScore++;
+    document.getElementById('feedback').textContent = state.streak >= 3
+      ? `🔥 Streak bonus! +${pts}` : `✅ Correct! +${pts}`;
+    document.getElementById('streak').textContent = state.streak >= 3 ? `🔥 ${state.streak} streak!` : '';
+  } else {
+    handleWrong(btn);
+    // highlight correct
+    document.querySelectorAll('.opt-btn').forEach(b => {
+      if (parseInt(b.textContent) === correct) b.classList.add('correct');
+    });
+  }
+
+  updateHUD();
+  state.qIndex++;
+
+  setTimeout(() => {
+    if (state.lives <= 0) return endGame(false);
+    if (state.qIndex >= LEVELS[state.level].questions) {
+      if (state.level + 1 >= LEVELS.length) return endGame(true);
+      state.level++;
+      soundLevelUp();
+      spawnConfetti();
+      showLevelIntro();
+    } else {
+      nextQuestion();
+    }
+  }, 1200);
+}
+
+function handleWrong(btn) {
+  if (btn) btn.classList.add('wrong');
+  soundWrong();
+  state.streak = 0;
+  state.lives--;
+  document.getElementById('feedback').textContent = `❌ The answer was ${state.current.ans}`;
+  document.getElementById('streak').textContent = '';
+}
+
+function endGame(won) {
+  show('end-screen');
+  const stars = state.score > 200 ? '⭐⭐⭐' : state.score > 100 ? '⭐⭐' : '⭐';
+  document.getElementById('end-stars').textContent = won ? '🏆🎉🏆' : stars;
+  document.getElementById('end-msg').textContent = won
+    ? `${state.name}, you beat all 5 levels! Amazing!` : `Good try, ${state.name}! Keep practising!`;
+  document.getElementById('end-score').textContent = `Final Score: ${state.score} points`;
+  if (won) spawnConfetti();
+}
+
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+function show(id) {
+  ['splash-screen', 'start-screen', 'level-screen', 'game-screen', 'end-screen'].forEach(s => {
+    document.getElementById(s).classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+function updateHUD() {
+  document.getElementById('score').textContent = `⭐ ${state.score}`;
+  document.getElementById('lives').textContent = '❤️'.repeat(state.lives) + '🖤'.repeat(Math.max(0, 3 - state.lives));
+}
+
+function updateProgress() {
+  const lvl = LEVELS[state.level];
+  const pct = (state.qIndex / lvl.questions) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function spawnParticles(el, emojis) {
+  const rect = el.getBoundingClientRect();
+  for (let i = 0; i < 5; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = (rect.left + rect.width / 2 + rand(-40, 40)) + 'px';
+    p.style.top = (rect.top + rand(-10, 10)) + 'px';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1200);
+  }
+}
+
+function spawnConfetti() {
+  const colors = ['#FF6B6B','#FFD93D','#6BCB77','#4ECDC4','#A855F7','#FF9F43'];
+  const container = document.getElementById('confetti-container');
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDelay = Math.random() * 0.8 + 's';
+    c.style.animationDuration = (1.5 + Math.random()) + 's';
+    container.appendChild(c);
+    setTimeout(() => c.remove(), 2500);
+  }
+}
+
+// Resume audio context on first interaction
+document.getElementById('name-input').addEventListener('keydown', e => e.key === 'Enter' && startGame());
+</script>
+</body>
+</html>
