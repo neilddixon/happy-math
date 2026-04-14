@@ -520,7 +520,9 @@ function nextQuestion() {
         <input id="type-in-input" type="number" min="0" autofocus placeholder="?"/>
         <button id="type-in-submit" onclick="submitTyped()">✅</button>
       </div>`;
-    document.getElementById('type-in-input').addEventListener('keydown', e => e.key === 'Enter' && submitTyped());
+    const ti = document.getElementById('type-in-input');
+    ti.addEventListener('keydown', e => e.key === 'Enter' && submitTyped());
+    ti.focus();
   } else {
     const opts = makeOptions(state.current.ans);
     container.innerHTML = opts.map(o =>
